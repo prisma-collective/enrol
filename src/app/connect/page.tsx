@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image'; 
-import '../styles/style.css'; 
+import '../globals.css'; 
 
 export default function WalletConnect() {
   return (
