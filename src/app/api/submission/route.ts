@@ -26,11 +26,6 @@ function isValidSignature(payload: string, receivedSignature: string): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  if (request.method !== 'POST') {
-    logger.info(request.method)
-    return new NextResponse('Method Not Allowed', { status: 405 });
-  }
-
   logger.info('Webhook triggered.');
 
   try {
