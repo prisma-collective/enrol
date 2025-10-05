@@ -6,6 +6,9 @@ import { createHmac, timingSafeEqual } from 'crypto';
 
 const SIGNING_SECRET = process.env.WEBHOOK_SIGNING_SECRET || '';
 
+// Ensure Node.js runtime since we rely on 'crypto'
+export const runtime = 'nodejs';
+
 function isValidSignature(payload: string, receivedSignature: string): boolean {
   logger.info('Verifying webhook signature...');
   logger.debug(`Received signature: ${receivedSignature}`);
@@ -55,6 +58,16 @@ export async function POST(request: NextRequest) {
     logger.error('Webhook error', { error });
     return handleError(error);
   }
+}
+
+// Some providers probe with HEAD before sending POST
+export async function HEAD() {
+  return new NextResponse(null, { status: 200 });
+}
+
+// Gracefully handle OPTIONS if a preflight occurs
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204 });
 }
 
 export async function GET() {
