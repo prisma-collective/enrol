@@ -1,32 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { redis } from '@/lib/redis';
-import { handleError } from '@/lib/utils';
-import { createHmac, timingSafeEqual } from 'crypto';
-
-const SIGNING_SECRET = process.env.WEBHOOK_SIGNING_SECRET || '';
+import { handleError, isValidSignature } from '@/lib/utils';
 
 // Ensure Node.js runtime since we rely on 'crypto'
 export const runtime = 'nodejs';
-
-function isValidSignature(payload: string, receivedSignature: string): boolean {
-  logger.info('Verifying webhook signature...');
-  logger.debug(`Received signature: ${receivedSignature}`);
-
-  const hmac = createHmac('sha256', SIGNING_SECRET);
-  const calculatedSignature = hmac.update(payload).digest('base64');
-  
-  logger.debug(`Calculated signature: ${calculatedSignature}`);
-
-  try {
-    return timingSafeEqual(
-      Buffer.from(calculatedSignature),
-      Buffer.from(receivedSignature)
-    );
-  } catch (err) {
-    return false;
-  }
-}
 
 export async function POST(request: NextRequest) {
   logger.info('Webhook triggered.');
