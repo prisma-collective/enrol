@@ -166,19 +166,35 @@ export async function POST(request: NextRequest) {
     const mergedRecord = JSON.parse(JSON.stringify(previousRecord));
 
     // Override fields that exist in the update payload
+    // Match by label since update form may have different question keys
     for (const updateField of json.data.fields) {
-      if (!updateField.key) continue;
+      if (!updateField.label) continue;
 
-      // Find matching field in previous record by key
+      // Find matching field in previous record by label (exact match)
       const existingFieldIndex = mergedRecord.data.fields.findIndex(
-        (f: any) => f.key === updateField.key
+        (f: any) => f.label === updateField.label
       );
 
       if (existingFieldIndex >= 0) {
-        // Update existing field value
-        mergedRecord.data.fields[existingFieldIndex].value = updateField.value;
+        // Only update if the new value is not null/empty
+        // This preserves existing values when update form doesn't provide a new value
+        if (updateField.value !== null && updateField.value !== undefined && updateField.value !== '') {
+          mergedRecord.data.fields[existingFieldIndex].value = updateField.value;
+        }
+        // Update the key to reflect the update form's question key
+        // This helps track which form version the field came from
+        mergedRecord.data.fields[existingFieldIndex].key = updateField.key;
+        // Update type if it changed
+        if (updateField.type) {
+          mergedRecord.data.fields[existingFieldIndex].type = updateField.type;
+        }
+        // Update options if they exist (for dropdowns, multi-select, etc.)
+        if (updateField.options) {
+          mergedRecord.data.fields[existingFieldIndex].options = updateField.options;
+        }
       } else {
-        // Add new field if it doesn't exist
+        // Only add new fields that don't exist in previous record
+        // (This should be rare, but handles cases where update form has completely new fields)
         mergedRecord.data.fields.push(updateField);
       }
     }
