@@ -7,7 +7,7 @@ function getDocsApiOrigin(): string {
 }
 
 function getDocsApiToken(): string | null {
-  const t = process.env.NEXT_PUBLIC_DOCS_API_TOKEN?.trim();
+  const t = process.env.DOCS_API_TOKEN?.trim();
   return t || null;
 }
 

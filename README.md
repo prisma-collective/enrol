@@ -44,7 +44,7 @@ Authorization: Bearer <PRIVATE_API_TOKEN>
 | `NEXT_PUBLIC_DID_INDEXER_URL` | DID indexer base URL for `/api/did/check` |
 | `NEXT_PUBLIC_DID_APP_URL` | DIDs dashboard URL (identity guide CTA) |
 | `NEXT_PUBLIC_DOCS_API_ORIGIN` | Docs serve API origin (default `https://docs.prisma.events`) |
-| `NEXT_PUBLIC_DOCS_API_TOKEN` | Optional bearer token for docs serve API |
+| `DOCS_API_TOKEN` | Optional bearer token for docs serve API (server-only) |
 
 ## Development
 
