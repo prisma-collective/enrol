@@ -3,9 +3,6 @@ import { secureCheckDID } from "@/lib/securedid/secureDIDCheck";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: Request) {
-  console.log("RAW URL:", process.env.NEXT_PUBLIC_DID_INDEXER_URL);
-  console.log("NODE_ENV:", process.env.NODE_ENV);
-
   try {
     const body = await request.json();
     const stakeAddress = body?.stakeAddress;
@@ -18,7 +15,6 @@ export async function POST(request: Request) {
     }
 
     const result = await secureCheckDID(stakeAddress);
-    console.log("DID result:", JSON.stringify(result));
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

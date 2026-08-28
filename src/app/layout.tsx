@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
-import { Space_Grotesk } from 'next/font/google';
+import { Bebas_Neue, Space_Grotesk } from 'next/font/google';
+import SiteHeaderNav from "@/components/SiteHeaderNav";
 import "./globals.css";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   display: 'swap',
+});
+
+const bebasNeue = Bebas_Neue({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-bebas-neue',
 });
 
 export const metadata: Metadata = {
@@ -40,12 +47,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="64x64" />
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
+        <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className={`${spaceGrotesk.className}`}>
+      <body className={`${spaceGrotesk.className} ${bebasNeue.variable}`}>
+        <SiteHeaderNav />
         {children}
       </body>
     </html>
