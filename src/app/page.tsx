@@ -14,7 +14,7 @@ const slides = [
     eyebrow: "Registration",
     title: "First arrivals",
     placeholder:
-      "Placeholder copy for first-time participants arriving at an event. This text will describe the enrolment path and what to expect when choosing a role.",
+      "Please continue event enrolment by clicking here to select your role. The following pages contain forms to collect basic info.",
     secondary: "Choose your role and complete event enrolment",
     href: "/event",
   },
@@ -24,7 +24,7 @@ const slides = [
     eyebrow: "Identity",
     title: "Returning participant",
     placeholder:
-      "Placeholder copy for participants who already hold a verified Cardano DID and need to reconnect their identity for this event.",
+      "Experienced participants may deepen their profile by connecting their wallet and registering a decentralised ID, used to sign verifiable claims.",
     secondary: "Create and verify your Cardano DID",
     href: "/identity/guide",
   },
