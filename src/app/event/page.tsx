@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 const stakeholderTypes = [
-  { name: "Participant", id: "3NB7ON", description: "Individuals", image: "/card-participant.svg" },
+  { name: "Participant", id: "ODpx0p", description: "Individuals", image: "/card-participant.svg" },
   { name: "Communities of Place", id: "5BkzBo", description: "Bioregional hubs & locals", image: "/card-copl.svg" },
   { name: "Communities of Practice", id: "n9J7rK", description: "Network representatives", image: "/card-copr.svg" },
   { name: "Partner", id: "wQB7El", description: "Technologies, funders, institutions", image: "/card-partners.svg" },
