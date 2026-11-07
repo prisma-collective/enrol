@@ -72,3 +72,32 @@ export function rewardAddressHexToBech32(hexAddress: string): string {
   const prefix = networkId === 1 ? "stake" : "stake_test";
   return bech32Encode(prefix, convertBits(bytes, 8, 5));
 }
+
+/**
+ * Whether `address` is a bech32 stake address (`stake1...` or
+ * `stake_test1...`) with a valid checksum and a 29-byte payload: a header
+ * byte and a 28-byte key or script hash.
+ */
+export function isStakeAddress(address: string): boolean {
+  if (address !== address.toLowerCase()) return false;
+  const separator = address.lastIndexOf("1");
+  const hrp = address.slice(0, separator);
+  if (hrp !== "stake" && hrp !== "stake_test") return false;
+
+  const data: number[] = [];
+  for (const char of address.slice(separator + 1)) {
+    const value = BECH32_ALPHABET.indexOf(char);
+    if (value === -1) return false;
+    data.push(value);
+  }
+  if (data.length < 7 || polymod([...expandHrp(hrp), ...data]) !== 1) return false;
+
+  try {
+    const bytes = convertBits(data.slice(0, -6), 5, 8);
+    // convertBits pads the last group; a valid address leaves a zero pad byte at most.
+    const payload = bytes.length === 30 && bytes[29] === 0 ? bytes.slice(0, 29) : bytes;
+    return payload.length === 29;
+  } catch {
+    return false;
+  }
+}

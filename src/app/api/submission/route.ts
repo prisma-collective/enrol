@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { publishSubmission, publisherFromEnv } from '@/lib/atproto/enrol';
 import { redis } from '@/lib/redis';
 import { handleError, isValidSignature } from '@/lib/utils';
 
@@ -30,6 +31,10 @@ export async function POST(request: NextRequest) {
 
     await redis.lpush('enrolment-submissions', JSON.stringify(json));
     logger.info(`Tally event queued. Type: ${json.eventType}, Form: ${json.data.formName}`);
+
+    // A hub's enrolment also goes to enrol's repo, so the AppView can find
+    // the hub's repo through its wallet (D25). Off until configured.
+    await publishSubmission(json, publisherFromEnv());
 
     return NextResponse.json({ status: 'ok' });
   } catch (error) {
