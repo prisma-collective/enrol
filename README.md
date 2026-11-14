@@ -35,11 +35,23 @@ Authorization: Bearer <PRIVATE_API_TOKEN>
 
 **V1 stub:** always returns `authorized: true` with `hubRole: OWNER`. Future versions will derive the DID from the wallet address and look up the DID in the indexer to determine `hubRole`.
 
+## Submission queue
+
+Tally posts each form to `/api/submission` (signed with `WEBHOOK_SIGNING_SECRET`),
+and enrol keeps it in Redis. Reading or deleting the queue needs the infra token:
+
+```
+GET    /api/submission
+DELETE /api/submission   {"eventId": "..."}
+Authorization: Bearer <PRIVATE_API_TOKEN>
+```
+
 ## Environment variables
 
 | Variable | Purpose |
 |----------|---------|
-| `PRIVATE_API_TOKEN` | Validates inbound infra API requests |
+| `PRIVATE_API_TOKEN` | Validates inbound infra API requests, including reading and deleting the submission queue |
+| `WEBHOOK_SIGNING_SECRET` | Tally's signing secret. Required: without it every webhook is refused |
 | `PROPAGATE_AUTH_WALLETS` | Comma-separated wallet allowlist for propagate auth |
 | `NEXT_PUBLIC_DID_INDEXER_URL` | DID indexer base URL for `/api/did/check` |
 | `NEXT_PUBLIC_DID_APP_URL` | DIDs dashboard URL (identity guide CTA) |

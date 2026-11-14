@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { publishSubmission, publisherFromEnv } from '@/lib/atproto/enrol';
+import { verifyInfraRequest } from '@/lib/private-auth';
 import { redis } from '@/lib/redis';
 import { handleError, isValidSignature } from '@/lib/utils';
 
@@ -53,7 +54,12 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204 });
 }
 
-export async function GET() {
+// The queue holds every application as sent: reading and deleting are for
+// Prisma's own infra only (Authorization: Bearer <PRIVATE_API_TOKEN>).
+export async function GET(request: NextRequest) {
+  const authError = verifyInfraRequest(request);
+  if (authError) return authError;
+
   try {
     const rawMessages = await redis.lrange("enrolment-submissions", 0, -1);
 
@@ -78,7 +84,10 @@ export async function GET() {
 }
 
 export async function DELETE(req: NextRequest) {
-  const { eventId } = await req.json();
+  const authError = verifyInfraRequest(req);
+  if (authError) return authError;
+
+  const { eventId } = await req.json().catch(() => ({}));
   if (!eventId) return NextResponse.json({ error: 'Missing eventId' }, { status: 400 });
 
   console.log(`[DELETE] Attempting to delete eventId: ${eventId}`);
