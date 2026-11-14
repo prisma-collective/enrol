@@ -1,8 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { logger } from '@/lib/logger';
 
-const SIGNING_SECRET = process.env.WEBHOOK_SIGNING_SECRET || '';
-
 export function handleError(error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: message }), {
@@ -11,22 +9,19 @@ export function handleError(error: unknown) {
     });
   }
 
+// Tally signs each webhook with HMAC-SHA256 over the raw body. Without
+// WEBHOOK_SIGNING_SECRET no signature is valid: an empty secret would let
+// anyone sign a request, since the key is then known to everyone.
 export function isValidSignature(payload: string, receivedSignature: string): boolean {
-  logger.info('Verifying webhook signature...');
-  logger.debug(`Received signature: ${receivedSignature}`);
-
-  const hmac = createHmac('sha256', SIGNING_SECRET);
-  const calculatedSignature = hmac.update(payload).digest('base64');
-  
-  logger.debug(`Calculated signature: ${calculatedSignature}`);
-
-  try {
-    return timingSafeEqual(
-      Buffer.from(calculatedSignature),
-      Buffer.from(receivedSignature)
-    );
-  } catch {
+  const secret = process.env.WEBHOOK_SIGNING_SECRET ?? '';
+  if (!secret) {
+    logger.error('Webhook rejected: WEBHOOK_SIGNING_SECRET is not set');
     return false;
   }
+  if (!receivedSignature) return false;
+
+  const calculated = createHmac('sha256', secret).update(payload).digest('base64');
+  const a = Buffer.from(calculated);
+  const b = Buffer.from(receivedSignature);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
-  
