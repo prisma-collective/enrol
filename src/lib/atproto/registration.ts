@@ -1,26 +1,23 @@
 /**
  * The registration enrol publishes when a hub sends its enrolment form (D25).
  *
- * It says one thing: this Tally response belongs to the hub with this
- * wallet. The hub's repo says the other half, in an identity link its
- * wallet signs. The Prisma AppView joins the two on the did:cardano, so
- * potentialise can show what each hub is doing now (at-tap #33).
+ * Shaped by the events.prisma.hub.profile lexicon: the hub's name and country
+ * are published at rkey "self" (one profile per hub). This is how a hub joins
+ * the network — Tap uses events.prisma.hub.profile as its signal.
  *
- * Nothing else from the form is published: names and answers stay in Redis.
- * And the wallet is published only when the person ticked the form's
- * consent question for it (D24, D5).
+ * The hub's wallet separately signs an identity link (did:cardano -> repo DID),
+ * so the AppView can join the profile to the hub's repo.
  */
 import { isStakeAddress } from '@/lib/cardano/stakeAddress';
 import type { PdsClient } from './pds';
 
-// The collection name is Proposed with the Lexicon groups (D21).
-export const REGISTRATION = 'events.prisma.enrol.registration';
+// Use the functioning lexicon the AppView indexes
+export const PROFILE = 'events.prisma.hub.profile';
 
-export type Registration = {
-  $type: typeof REGISTRATION;
-  registrationId: string;
-  cardanoDid: string;
-  role: 'hub';
+export type HubProfile = {
+  $type: typeof PROFILE;
+  name: string;
+  country: string;
   createdAt: string;
 };
 
@@ -35,21 +32,22 @@ export type TallySubmission = {
 /** Which form is the hub enrolment, and which of its questions to read. */
 export type FormConfig = {
   hubFormIds: Set<string>;
+  nameField: string;
+  countryField: string;
   walletField: string;
   consentField: string;
 };
 
 const RESPONSE_ID = /^[A-Za-z0-9_-]{1,64}$/;
+const COUNTRY_CODE = /^[A-Z]{2}$/;
 
 const field = (fields: TallyField[], label: string) =>
   fields.find((f) => f.label?.trim().toLowerCase() === label.trim().toLowerCase());
 
-// A ticked checkbox is `true`; a ticked option in a checkbox list is a non-empty array.
 function ticked(f: TallyField | undefined): boolean {
   return f?.value === true || (Array.isArray(f?.value) && f.value.length > 0);
 }
 
-// The form may hold the stake address, or the did:cardano itself.
 function cardanoDid(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   const address = value.trim().replace(/^did:cardano:/, '');
@@ -57,29 +55,36 @@ function cardanoDid(value: unknown): string | null {
 }
 
 /**
- * The registration for this submission, or why there is none. A reason is
- * not an error: most submissions aren't hub enrolments.
+ * The hub profile for this submission, or why there is none.
+ * The profile is shaped by events.prisma.hub.profile: name + country.
  */
-export function registrationFrom(sub: TallySubmission, config: FormConfig): Registration | { skip: string } {
+export function profileFrom(sub: TallySubmission, config: FormConfig): HubProfile | { skip: string } {
   const data = sub.data;
   if (sub.eventType !== 'FORM_RESPONSE' || !data) return { skip: 'not a form response' };
   if (!data.formId || !config.hubFormIds.has(data.formId)) return { skip: 'not a hub enrolment form' };
   if (!data.responseId || !RESPONSE_ID.test(data.responseId)) return { skip: 'no usable responseId' };
   const fields = data.fields ?? [];
-  if (!ticked(field(fields, config.consentField))) return { skip: 'no consent to publish the wallet' };
+  if (!ticked(field(fields, config.consentField))) return { skip: 'no consent to publish' };
+  const name = String(field(fields, config.nameField)?.value ?? '').trim();
+  if (!name) return { skip: 'no name in the name field' };
+  const country = String(field(fields, config.countryField)?.value ?? '').trim().toUpperCase();
+  if (!COUNTRY_CODE.test(country)) return { skip: 'no valid country code in the country field' };
   const did = cardanoDid(field(fields, config.walletField)?.value);
   if (!did) return { skip: 'no stake address in the wallet field' };
   const createdAt = new Date(data.createdAt ?? sub.createdAt ?? Date.now());
   return {
-    $type: REGISTRATION,
-    registrationId: data.responseId,
-    cardanoDid: did,
-    role: 'hub',
+    $type: PROFILE,
+    name,
+    country,
     createdAt: Number.isNaN(createdAt.getTime()) ? new Date().toISOString() : createdAt.toISOString(),
   };
 }
 
-/** Publishes the registration to enrol's repo, at rkey = responseId. */
-export async function publishRegistration(pds: PdsClient, enrolRepo: string, registration: Registration) {
-  return pds.putRecord(enrolRepo, REGISTRATION, registration.registrationId, registration);
+/** Publishes the hub profile to the hub's repo, at rkey "self" (one per hub). */
+export async function publishProfile(pds: PdsClient, repoDid: string, profile: HubProfile) {
+  return pds.putRecord(repoDid, PROFILE, 'self', {
+    name: profile.name,
+    country: profile.country,
+    createdAt: profile.createdAt,
+  });
 }
