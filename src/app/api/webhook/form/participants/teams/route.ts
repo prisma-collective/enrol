@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { redis } from '@/lib/redis';
 import { handleError, isValidSignature } from '@/lib/utils';
+import { verifyInfraRequest } from '@/lib/private-auth';
 
 // Ensure Node.js runtime since we rely on 'crypto'
 export const runtime = 'nodejs';
@@ -48,7 +49,12 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204 });
 }
 
-export async function GET() {
+// The queue holds applicants' answers (names, emails, phone numbers), so
+// reading it needs the infra token, as /api/submission does.
+export async function GET(request: NextRequest) {
+  const authError = verifyInfraRequest(request);
+  if (authError) return authError;
+
   try {
     const rawMessages = await redis.lrange("enrolment-participants-teams", 0, -1);
 
