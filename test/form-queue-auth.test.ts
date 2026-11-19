@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 
 // The three form queues hold applicants' answers. Reading them needs the
-// infra token, like /api/submission.
+// infra token.
 const lrange = jest.fn().mockResolvedValue([JSON.stringify({ createdAt: '2026-11-17T00:00:00Z', data: { formName: 'synthetic' } })]);
 jest.mock('@/lib/redis', () => ({ redis: { lrange: (...args: unknown[]) => lrange(...args), lpush: jest.fn() } }));
 

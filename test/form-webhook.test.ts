@@ -1,6 +1,7 @@
 import { createHmac } from 'crypto';
 import { NextRequest } from 'next/server';
-import { DELETE, GET, POST } from '@/app/api/submission/route';
+import { POST } from '@/app/api/webhook/form/hubs/curation/route';
+import { publishSubmission } from '@/lib/atproto/enrol';
 import { redis } from '@/lib/redis';
 import { isValidSignature } from '@/lib/utils';
 
@@ -26,13 +27,13 @@ const queued = JSON.stringify({
   data: { formName: 'Synthetic hub form' },
 });
 
-const URL = 'http://localhost:3000/api/submission';
+const URL = 'http://localhost:3000/api/webhook/form/hubs/curation';
 
 function sign(body: string, secret: string) {
   return createHmac('sha256', secret).update(body).digest('base64');
 }
 
-describe('API /api/submission', () => {
+describe('Tally webhook /api/webhook/form/hubs/curation', () => {
   const originalToken = process.env.PRIVATE_API_TOKEN;
   const originalSecret = process.env.WEBHOOK_SIGNING_SECRET;
 
@@ -40,6 +41,7 @@ describe('API /api/submission', () => {
     process.env.PRIVATE_API_TOKEN = 'test-token';
     process.env.WEBHOOK_SIGNING_SECRET = 'test-secret';
     mockedRedis.lpush.mockReset();
+    (publishSubmission as jest.Mock).mockReset();
     mockedRedis.lrange.mockReset().mockResolvedValue([queued]);
     mockedRedis.lrem.mockReset().mockResolvedValue(1);
   });
@@ -47,58 +49,6 @@ describe('API /api/submission', () => {
   afterAll(() => {
     process.env.PRIVATE_API_TOKEN = originalToken;
     process.env.WEBHOOK_SIGNING_SECRET = originalSecret;
-  });
-
-  describe('GET', () => {
-    it('refuses a request with no token', async () => {
-      const res = await GET(new NextRequest(URL));
-      expect(res.status).toBe(401);
-      expect(mockedRedis.lrange).not.toHaveBeenCalled();
-    });
-
-    it('refuses a wrong token', async () => {
-      const res = await GET(new NextRequest(URL, { headers: { Authorization: 'Bearer nope' } }));
-      expect(res.status).toBe(401);
-      expect(mockedRedis.lrange).not.toHaveBeenCalled();
-    });
-
-    it('refuses everyone when PRIVATE_API_TOKEN is not set', async () => {
-      delete process.env.PRIVATE_API_TOKEN;
-      const res = await GET(new NextRequest(URL, { headers: { Authorization: 'Bearer ' } }));
-      expect(res.status).toBe(500);
-      expect(mockedRedis.lrange).not.toHaveBeenCalled();
-    });
-
-    it('returns the queue with the infra token', async () => {
-      const res = await GET(new NextRequest(URL, { headers: { Authorization: 'Bearer test-token' } }));
-      expect(res.status).toBe(200);
-      expect((await res.json()).messages).toHaveLength(1);
-    });
-  });
-
-  describe('DELETE', () => {
-    const body = JSON.stringify({ eventId: 'evt-synthetic-1' });
-
-    it('refuses a request with no token', async () => {
-      const res = await DELETE(new NextRequest(URL, { method: 'DELETE', body }));
-      expect(res.status).toBe(401);
-      expect(mockedRedis.lrem).not.toHaveBeenCalled();
-    });
-
-    it('deletes with the infra token', async () => {
-      const res = await DELETE(
-        new NextRequest(URL, { method: 'DELETE', body, headers: { Authorization: 'Bearer test-token' } })
-      );
-      expect(res.status).toBe(200);
-      expect(mockedRedis.lrem).toHaveBeenCalledWith('enrolment-submissions', 1, queued);
-    });
-
-    it('answers 400 to a body that is not JSON', async () => {
-      const res = await DELETE(
-        new NextRequest(URL, { method: 'DELETE', body: 'x', headers: { Authorization: 'Bearer test-token' } })
-      );
-      expect(res.status).toBe(400);
-    });
   });
 
   describe('POST (Tally webhook)', () => {
@@ -111,7 +61,8 @@ describe('API /api/submission', () => {
         })
       );
       expect(res.status).toBe(200);
-      expect(mockedRedis.lpush).toHaveBeenCalledTimes(1);
+      expect(mockedRedis.lpush).toHaveBeenCalledWith('enrolment-hubs-curation', queued);
+      expect(publishSubmission).toHaveBeenCalledTimes(1);
     });
 
     it('refuses a submission signed with an empty secret when none is set', async () => {
@@ -125,6 +76,7 @@ describe('API /api/submission', () => {
       );
       expect(res.status).toBe(401);
       expect(mockedRedis.lpush).not.toHaveBeenCalled();
+      expect(publishSubmission).not.toHaveBeenCalled();
     });
   });
 });

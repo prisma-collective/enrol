@@ -50,7 +50,7 @@ export async function OPTIONS() {
 }
 
 // The queue holds applicants' answers (names, emails, phone numbers), so
-// reading it needs the infra token, as /api/submission does.
+// reading it needs the infra token.
 export async function GET(request: NextRequest) {
   const authError = verifyInfraRequest(request);
   if (authError) return authError;

@@ -35,22 +35,26 @@ Authorization: Bearer <PRIVATE_API_TOKEN>
 
 **V1 stub:** always returns `authorized: true` with `hubRole: OWNER`. Future versions will derive the DID from the wallet address and look up the DID in the indexer to determine `hubRole`.
 
-## Submission queue
+## Form webhooks
 
-Tally posts each form to `/api/submission` (signed with `WEBHOOK_SIGNING_SECRET`),
-and enrol keeps it in Redis. Reading or deleting the queue needs the infra token:
+Tally posts each form to its own route, signed with `WEBHOOK_SIGNING_SECRET`,
+and enrol keeps it in a Redis queue:
 
 ```
-GET    /api/submission
-DELETE /api/submission   {"eventId": "..."}
-Authorization: Bearer <PRIVATE_API_TOKEN>
+POST /api/webhook/form/hubs/curation                  -> enrolment-hubs-curation
+POST /api/webhook/form/participants/teams             -> enrolment-participants-teams
+POST /api/webhook/form/partners/external-evaluators   -> enrolment-partners-evaluators
 ```
+
+Reading a queue (`GET` on the same route) needs the infra token:
+`Authorization: Bearer <PRIVATE_API_TOKEN>`. The older `/api/submission`
+route is gone.
 
 ## Environment variables
 
 | Variable | Purpose |
 |----------|---------|
-| `PRIVATE_API_TOKEN` | Validates inbound infra API requests, including reading and deleting the submission queue |
+| `PRIVATE_API_TOKEN` | Validates inbound infra API requests, including reading the form queues |
 | `WEBHOOK_SIGNING_SECRET` | Tally's signing secret. Required: without it every webhook is refused |
 | `PROPAGATE_AUTH_WALLETS` | Comma-separated wallet allowlist for propagate auth |
 | `NEXT_PUBLIC_DID_INDEXER_URL` | DID indexer base URL for `/api/did/check` |
@@ -67,7 +71,7 @@ Authorization: Bearer <PRIVATE_API_TOKEN>
 
 ## Hub registrations on AT Protocol (D25)
 
-When a hub sends the enrolment form, `/api/submission` keeps it in Redis as
+When a hub sends the enrolment form, `/api/webhook/form/hubs/curation` keeps it in Redis as
 before and also publishes one record from enrol's own repo:
 
 ```json

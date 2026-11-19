@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { publishSubmission, publisherFromEnv } from '@/lib/atproto/enrol';
 import { redis } from '@/lib/redis';
 import { handleError, isValidSignature } from '@/lib/utils';
 import { verifyInfraRequest } from '@/lib/private-auth';
@@ -32,6 +33,10 @@ export async function POST(request: NextRequest) {
     await redis.lpush('enrolment-hubs-curation', JSON.stringify(json));
     logger.info(`Tally event queued. Type: ${json.eventType}, Form: ${json.data.formName}`);
 
+    // A hub's enrolment also goes to enrol's repo (D25). Only forms listed
+    // in ENROL_HUB_FORM_IDS publish, and only when configured.
+    await publishSubmission(json, publisherFromEnv());
+
     return NextResponse.json({ status: 'ok' });
   } catch (error) {
     logger.error('Webhook error', { error });
@@ -50,7 +55,7 @@ export async function OPTIONS() {
 }
 
 // The queue holds applicants' answers (names, emails, phone numbers), so
-// reading it needs the infra token, as /api/submission does.
+// reading it needs the infra token.
 export async function GET(request: NextRequest) {
   const authError = verifyInfraRequest(request);
   if (authError) return authError;
