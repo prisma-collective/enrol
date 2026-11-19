@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 
@@ -23,7 +24,7 @@ export function verifyInfraRequest(request: NextRequest): NextResponse | null {
   }
 
   const token = header.slice('Bearer '.length);
-  if (token !== expected) {
+  if (!sameToken(token, expected)) {
     logger.warn('Infra auth rejected: token mismatch', {
       path: request.nextUrl.pathname,
     });
@@ -31,4 +32,13 @@ export function verifyInfraRequest(request: NextRequest): NextResponse | null {
   }
 
   return null;
+}
+
+// Compares in constant time, so the response time doesn't tell how much of
+// a guessed token was right. timingSafeEqual needs equal lengths; a length
+// mismatch is refused without comparing.
+function sameToken(given: string, expected: string): boolean {
+  const a = Buffer.from(given);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
