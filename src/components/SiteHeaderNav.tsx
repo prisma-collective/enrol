@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { IoChevronBack } from "react-icons/io5";
 import PrismaLogo from "@/components/PrismaLogo";
 import { getBackHref } from "@/lib/navigation/getBackHref";
+import { safeReturnUrl } from "@/lib/navigation/returnUrl";
 
 const IDENTITY_BANNER_OFFSET_CLASS = "top-11 sm:top-0";
 
@@ -19,7 +20,8 @@ export default function SiteHeaderNav() {
     hasFeedbackBanner ? IDENTITY_BANNER_OFFSET_CLASS : "top-0",
   ].join(" ");
 
-  const returnUrl = searchParams.get("return");
+  // Only an allowed console origin: ?return= is written by whoever sent the link.
+  const returnUrl = safeReturnUrl(searchParams.get("return"));
 
   if (pathname === "/") {
     return (
@@ -68,6 +70,7 @@ export default function SiteHeaderNav() {
     );
   }
 
+  if (!backHref) return null;
   return (
     <div className={shellClass}>
       <Link

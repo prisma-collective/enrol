@@ -34,7 +34,12 @@ export async function dispatchRagRequest(
 
   const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    // evaluate answers the enrolment preset, and posts back to enrol, only
+    // for a caller with the shared infra token.
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${requireEnv('PRIVATE_API_TOKEN')}`,
+    },
     body: JSON.stringify(body),
   });
 

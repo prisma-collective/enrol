@@ -7,6 +7,7 @@ describe('dispatchRagRequest', () => {
   beforeEach(() => {
     process.env.EVALUATE_APP_URL = 'https://evaluate.example.com';
     process.env.ENROL_APP_URL = 'https://enrol.example.com';
+    process.env.PRIVATE_API_TOKEN = 'synthetic-token';
   });
 
   afterEach(() => {
@@ -32,7 +33,7 @@ describe('dispatchRagRequest', () => {
       'https://evaluate.example.com/api/rag',
       expect.objectContaining({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer synthetic-token' },
         body: JSON.stringify({
           query: 'How does enrolment work?',
           preset: 'enrolment',

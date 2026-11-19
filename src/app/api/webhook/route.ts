@@ -8,11 +8,15 @@ import {
   type TelegramWebhookPayload,
 } from '@/lib/telegram';
 import { handleError } from '@/lib/utils';
+import { verifyTelegramRequest } from '@/lib/telegram-auth';
 
 export async function POST(request: NextRequest) {
   if (request.method !== 'POST') {
     return new NextResponse('Method Not Allowed', { status: 405 });
   }
+
+  const unauthorized = verifyTelegramRequest(request);
+  if (unauthorized) return unauthorized;
 
   logger.info('Enrolment telegram webhook triggered.');
 
