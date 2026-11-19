@@ -17,48 +17,51 @@ const update = JSON.stringify({
   message: { message_id: 1, chat: { id: -1001234567890, type: 'supergroup' }, text: '/ask List all active hubs' },
 });
 
-function post(secret?: string) {
+function post(authorization?: string) {
   return POST(
     new NextRequest('http://localhost:3000/api/webhook', {
       method: 'POST',
       body: update,
-      headers: secret === undefined ? {} : { 'x-telegram-bot-api-secret-token': secret },
+      headers: authorization === undefined ? {} : { authorization },
     })
   );
 }
 
-describe('Telegram webhook /api/webhook', () => {
-  const original = process.env.TELEGRAM_WEBHOOK_SECRET;
+// Telegram calls timelining; timelining forwards _botEnrolment updates here
+// with Authorization: Bearer <PRIVATE_API_TOKEN> (internalDispatchHeaders).
+describe('Bot webhook /api/webhook (forwarded by timelining)', () => {
+  const original = process.env.PRIVATE_API_TOKEN;
   beforeEach(() => {
-    process.env.TELEGRAM_WEBHOOK_SECRET = 'synthetic-secret';
+    process.env.PRIVATE_API_TOKEN = 'synthetic-token';
     (routeEnrolmentMessage as jest.Mock).mockClear();
     (sendTelegramMessage as jest.Mock).mockClear();
   });
   afterAll(() => {
-    process.env.TELEGRAM_WEBHOOK_SECRET = original;
+    process.env.PRIVATE_API_TOKEN = original;
   });
 
-  it('refuses a forged update with no secret', async () => {
+  it('refuses a forged update with no token', async () => {
     const res = await post();
     expect(res.status).toBe(401);
     expect(routeEnrolmentMessage).not.toHaveBeenCalled();
     expect(sendTelegramMessage).not.toHaveBeenCalled();
   });
 
-  it('refuses a wrong secret', async () => {
-    expect((await post('synthetic-secreT')).status).toBe(401);
-    expect((await post('synthetic-secret-longer')).status).toBe(401);
+  it('refuses a wrong token', async () => {
+    expect((await post('Bearer synthetic-tokeN')).status).toBe(401);
+    expect((await post('Bearer synthetic-token-longer')).status).toBe(401);
+    expect((await post('synthetic-token')).status).toBe(401);
     expect(routeEnrolmentMessage).not.toHaveBeenCalled();
   });
 
-  it('refuses every update when no secret is configured', async () => {
-    delete process.env.TELEGRAM_WEBHOOK_SECRET;
-    expect((await post('')).status).toBe(500);
+  it('refuses every update when no token is configured', async () => {
+    delete process.env.PRIVATE_API_TOKEN;
+    expect((await post('Bearer ')).status).toBe(500);
     expect(routeEnrolmentMessage).not.toHaveBeenCalled();
   });
 
-  it('handles an update with the right secret', async () => {
-    const res = await post('synthetic-secret');
+  it('handles an update forwarded with the token', async () => {
+    const res = await post('Bearer synthetic-token');
     expect(res.status).toBe(200);
     expect(routeEnrolmentMessage).toHaveBeenCalledTimes(1);
   });

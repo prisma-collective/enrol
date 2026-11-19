@@ -8,14 +8,16 @@ import {
   type TelegramWebhookPayload,
 } from '@/lib/telegram';
 import { handleError } from '@/lib/utils';
-import { verifyTelegramRequest } from '@/lib/telegram-auth';
+import { verifyInfraRequest } from '@/lib/private-auth';
 
 export async function POST(request: NextRequest) {
   if (request.method !== 'POST') {
     return new NextResponse('Method Not Allowed', { status: 405 });
   }
 
-  const unauthorized = verifyTelegramRequest(request);
+  // Telegram calls timelining (/api/story/webhook), and timelining forwards
+  // _botEnrolment messages here with the shared PRIVATE_API_TOKEN.
+  const unauthorized = verifyInfraRequest(request);
   if (unauthorized) return unauthorized;
 
   logger.info('Enrolment telegram webhook triggered.');
