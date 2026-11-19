@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Bebas_Neue, Space_Grotesk } from 'next/font/google';
 import SiteHeaderNav from "@/components/SiteHeaderNav";
 import "./globals.css";
@@ -54,7 +55,10 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${spaceGrotesk.className} ${bebasNeue.variable}`}>
-        <SiteHeaderNav />
+        {/* useSearchParams (?return=) needs a Suspense boundary, or the static build fails */}
+        <Suspense fallback={null}>
+          <SiteHeaderNav />
+        </Suspense>
         {children}
       </body>
     </html>
