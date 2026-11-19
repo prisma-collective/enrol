@@ -55,7 +55,6 @@ route is gone.
 | Variable | Purpose |
 |----------|---------|
 | `PRIVATE_API_TOKEN` | Validates inbound infra API requests, including reading the form queues |
-| `TELEGRAM_WEBHOOK_SECRET` | The `secret_token` given to Telegram's `setWebhook`. Required: without it the bot webhook refuses every update |
 | `NEXT_PUBLIC_RETURN_ORIGINS` | Comma-separated console origins that `?return=` may link back to (https). localhost is always allowed |
 | `WEBHOOK_SIGNING_SECRET` | Tally's signing secret. Required: without it every webhook is refused |
 | `PROPAGATE_AUTH_WALLETS` | Comma-separated wallet allowlist for propagate auth |
