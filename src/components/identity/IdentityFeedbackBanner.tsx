@@ -29,15 +29,14 @@ export default function IdentityFeedbackBanner() {
 
   return (
     <>
-      <div className="fixed top-0 left-0 right-0 z-40 flex justify-center px-6">
-        <button
-          type="button"
-          onClick={onOpenTallyPreview}
-          className="w-full max-w-2xl cursor-pointer rounded-b-lg border border-t-0 border-teal-600 bg-teal-600/20 px-4 py-2.5 text-center text-sm leading-snug text-teal-600 transition-colors duration-300 hover:bg-teal-600/30 md:rounded-b-xl"
-        >
-          This is an experimental feature and we&apos;d love to hear your feedback on it.
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={onOpenTallyPreview}
+        className="pill cursor-pointer border-[rgba(45,212,191,0.35)] bg-[rgba(45,212,191,0.08)] text-[#5eead4] hover:bg-[rgba(45,212,191,0.16)] transition-colors"
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-[#2dd4bf]" />
+        <span>Experimental · Share feedback</span>
+      </button>
 
       <PreviewPane source={preview} onClose={onClosePreview} />
     </>

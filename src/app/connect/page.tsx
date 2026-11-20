@@ -1,13 +1,14 @@
 "use client";
 
-import { Suspense, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Image from 'next/image'; 
-import '../globals.css'; 
+import { Suspense, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { FiArrowRight, FiChevronDown, FiChevronUp, FiShield } from "react-icons/fi";
+import { HelpTip } from "@/components/HelpTip";
 
 export default function WalletConnect() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="min-h-[calc(100vh-4rem)] bg-[var(--color-void)]" />}>
       <WalletConnectContent />
     </Suspense>
   );
@@ -15,90 +16,76 @@ export default function WalletConnect() {
 
 function WalletConnectContent() {
   const searchParams = useSearchParams();
-  const name = searchParams.get('name');
-  const submission_id = searchParams.get('submission_id');
-  const respondent_id = searchParams.get('respondent_id');
-  const stakeholderType = searchParams.get('type');
+  const name = searchParams.get("name");
+  const submissionId = searchParams.get("submission_id");
+  const respondentId = searchParams.get("respondent_id");
+  const stakeholderType = searchParams.get("type");
+  const [showDetails, setShowDetails] = useState(false);
 
-  useEffect(() => {
-    // Logic to check if a wallet is already connected
-    // If connected, redirect to a success page or dashboard
-  }, []);
-  
-  const connectWallet = async () => {
-    // Logic to connect to an existing wallet
-    // Use a Cardano wallet library to handle the connection
-  };
-  
-  const createWallet = async () => {
-    // Logic to create a new wallet
-    // Use a Cardano wallet library to handle wallet creation
-  };
+  const hasMeta = Boolean(submissionId || respondentId || stakeholderType);
 
   return (
-    <div className="h-screen relative">
-      <div className="mesh-gradient absolute inset-0 z-10" />
-      <div className="min-h-screen flex flex-col items-center justify-center relative z-20 pt-5 pb-5">
-        <a href="https://prisma.events" target="_blank" rel="noopener noreferrer" className="mb-6">
-          <Image 
-              src="/logo_colour.svg" 
-              alt="Prisma Events Logo" 
-              className="h-16 w-auto animate-spin-slow" 
-              width={64} // Specify width
-              height={64} // Specify height
-          />
-        </a>
-
-        <div className="container mx-auto px-16">
-          <h1 className="text-4xl font-bold mb-8 text-center text-white">
-            Welcome, {name}
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col">
+      <section className="hero-grad-sticky px-5 sm:px-8 py-5 border-b border-[var(--color-rule)]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-xs sm:text-sm font-medium text-[var(--color-hub-soft)] tracking-[0.2em] uppercase">
+            Wallet setup
+          </div>
+          <h1 className="display text-4xl sm:text-5xl leading-none uppercase text-white mt-2">
+            {name ? `Welcome, ${name}` : "Connect your wallet"}
           </h1>
+          <p className="text-base sm:text-lg text-[var(--color-mute)] mt-2.5 max-w-2xl leading-relaxed">
+            Link an existing Cardano wallet or follow our guide to set up your Decentralised ID.
+          </p>
         </div>
+      </section>
 
-        <div className="container mx-auto px-16 max-w-2xl">
-          {/* Static card containing the wallet connection form */}
-          <div className="relative bg-gray-800 bg-opacity-70 rounded-xl border border-gray-600 shadow-lg overflow-hidden flex flex-col">
-            <div className="p-6 flex flex-col items-center justify-center">
-              <h2 className="text-2xl font-semibold text-white mb-4">
-                Wallet Setup
+      <main className="relative z-10 flex-1 flex items-start sm:items-center justify-center px-5 py-10">
+        <div className="card w-full max-w-md p-6 sm:p-7 space-y-5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FiShield className="text-[var(--color-hub-soft)] text-lg shrink-0" />
+              <h2 className="text-lg sm:text-xl font-medium tracking-tight text-white">
+                Next step
               </h2>
-
-              {/* Instructions */}
-              <p className="text-gray-300 mb-6 text-center">
-                To proceed with your registration, please connect your Cardano wallet or create a new one.
-              </p>
-              <p className="text-gray-300 mb-6 text-center">
-                Submission ID: {submission_id}
-              </p>
-              <p className="text-gray-300 mb-6 text-center">
-                Respondent ID: {respondent_id}
-              </p>
-              <p className="text-gray-300 mb-6 text-center">
-                Stakeholder type: {stakeholderType}
-              </p>
-
-              {/* Wallet connection buttons */}
-              <div className="flex flex-col space-y-4">
-                {/* Connect existing wallet button */}
-                <button
-                  onClick={connectWallet} /* This function would handle wallet connection */
-                  className="bg-blue-400 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300"
-                >
-                  Connect Existing Wallet
-                </button>
-
-                {/* Create new wallet button */}
-                <button
-                  onClick={createWallet} /* This function would handle wallet creation */
-                  className="bg-gray-800 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300"
-                >
-                  Create New Wallet
-                </button>
-              </div>
+              <HelpTip label="About wallet setup" title="Your Cardano identity" align="right">
+                Use your existing Eternl or Lace wallet to verify your DID, or follow the step-by-step identity guide if you are setting one up for the first time.
+              </HelpTip>
             </div>
           </div>
+
+          <div className="space-y-3">
+            <Link href="/identity/lookup" className="btn btn-primary w-full py-2.5">
+              <span>Connect existing wallet</span>
+              <FiArrowRight />
+            </Link>
+            <Link href="/identity/guide" className="btn w-full py-2.5">
+              <span>New to Cardano DIDs? Follow the guide</span>
+            </Link>
+          </div>
+
+          {hasMeta && (
+            <div className="pt-2 border-t border-[var(--color-rule)]">
+              <button
+                type="button"
+                onClick={() => setShowDetails((s) => !s)}
+                className="w-full flex items-center justify-between text-xs text-[var(--color-mute)] hover:text-white transition-colors cursor-pointer"
+              >
+                <span>Submission details</span>
+                {showDetails ? <FiChevronUp /> : <FiChevronDown />}
+              </button>
+
+              {showDetails && (
+                <div className="mt-2.5 rounded-lg bg-[var(--color-void)] border border-[var(--color-rule)] p-3 space-y-1.5 text-xs text-[var(--color-secondary)] font-mono">
+                  {stakeholderType && <div>Role: {stakeholderType}</div>}
+                  {submissionId && <div className="break-all">Submission: {submissionId}</div>}
+                  {respondentId && <div className="break-all">Respondent: {respondentId}</div>}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

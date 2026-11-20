@@ -1,32 +1,86 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/fonts/SpaceGrotesk-VariableFont_wght.woff2") format("woff2");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("/fonts/BebasNeue-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --color-void: #000000;
+  /* Calm Obsidian Surface Ladder — unified with Prisma Console & Vault */
+  --color-void: #07080a;
+  --color-panel: #0c0d11;
+  --color-panel-2: #13151b;
+  --color-elevated: #191c24;
   --color-signal: #ffffff;
-  --color-mute: #a3a3a3;
-  --color-rule: #262626;
+  --color-text: #f4f4f6;
+  --color-secondary: #c4c6cf;
+  --color-mute: #8b8f9c;
+  --color-dim: #525663;
+  --color-rule: rgba(255, 255, 255, 0.08);
+  --color-rule-strong: rgba(255, 255, 255, 0.16);
+
+  /* Official Prisma Spectrum Accents */
+  --color-hub: #7b61ff;
+  --color-hub-soft: #a794ff;
+  --color-team: #ff3d7f;
+  --color-flow: #22d3ee;
+  --color-flow-hover: #67e8f9;
   --color-teal: #2dd4bf;
   --color-teal-muted: #0f766e;
-  --font-display: var(--font-bebas-neue), "Bebas Neue", sans-serif;
+  --color-ok: #34d399;
+  --color-warn: #f59e0b;
+  --color-danger: #f87171;
+
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bebas Neue", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "JetBrains Mono", Consolas, monospace;
   --ease-prisma: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
-  --background: #000000;
-  --foreground: #ffffff;
+  --background: #07080a;
+  --foreground: #f4f4f6;
+}
+
+html {
+  color-scheme: dark;
 }
 
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
+  overflow-x: clip;
   background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Match prisma.events responsive body text scale */
+body {
+  font-size: 16px;
+}
+@media (min-width: 640px) {
+  body { font-size: 17px; }
+}
+@media (min-width: 1024px) {
+  body { font-size: 18px; }
+}
+@media (min-width: 1800px) {
+  body { font-size: 19px; }
 }
 
 a {
@@ -36,12 +90,119 @@ a {
 
 a:focus-visible,
 button:focus-visible {
-  outline: 1px solid #ffffff;
-  outline-offset: 3px;
+  outline: 2px solid var(--color-flow);
+  outline-offset: 2px;
 }
 
-html {
-  color-scheme: dark;
+/* Sticky solid-opaque page hero right beneath the h-16 top bar */
+.hero-grad-sticky {
+  position: sticky;
+  top: 4rem;
+  z-index: 20;
+  background:
+    radial-gradient(52rem 24rem at 12% -20%, rgba(123, 97, 255, 0.14), transparent 62%),
+    radial-gradient(40rem 20rem at 88% -15%, rgba(34, 211, 238, 0.09), transparent 60%),
+    var(--color-void);
+  box-shadow: 0 12px 28px -20px rgba(0, 0, 0, 0.95);
+}
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-rule);
+  border-radius: 0.875rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 8px 24px -16px rgba(0, 0, 0, 0.7);
+}
+
+.card-subtle {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--color-rule);
+  border-radius: 0.75rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.55rem;
+  padding: 0.55rem 1rem;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  letter-spacing: 0.015em;
+  border: 1px solid var(--color-rule-strong);
+  background: var(--color-panel-2);
+  color: var(--color-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.16s var(--ease-prisma),
+    border-color 0.16s var(--ease-prisma),
+    color 0.16s var(--ease-prisma),
+    transform 0.12s var(--ease-prisma);
+}
+.btn:hover:not(:disabled) {
+  background: var(--color-elevated);
+  border-color: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+.btn:disabled {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-dim);
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #09090b;
+  font-weight: 600;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #e4e4ea;
+  border-color: #e4e4ea;
+  color: #09090b;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-mute);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text);
+}
+
+.btn-sm {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8125rem;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.22rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--color-rule);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-secondary);
+  white-space: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

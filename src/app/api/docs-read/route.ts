@@ -52,7 +52,29 @@ export async function GET(request: Request) {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch content: ${response.status} ${response.statusText}`);
+      if (response.status === 401 || response.status === 403) {
+        return NextResponse.json({
+          content: "",
+          success: false,
+          media: [] as { src: string; alt?: string }[],
+          error:
+            "The inline guide preview isn't connected in this environment yet. Open the full guide on Prisma Docs below.",
+        });
+      }
+      if (response.status === 404) {
+        return NextResponse.json({
+          content: "",
+          success: false,
+          media: [] as { src: string; alt?: string }[],
+          error: "This guide page could not be found right now.",
+        });
+      }
+      return NextResponse.json({
+        content: "",
+        success: false,
+        media: [] as { src: string; alt?: string }[],
+        error: "We couldn't load the live guide right now. Please try again or open it on Prisma Docs.",
+      });
     }
 
     const contentType = response.headers.get("content-type");
@@ -93,7 +115,7 @@ export async function GET(request: Request) {
       content: "",
       success: false,
       media: [] as { src: string; alt?: string }[],
-      error: error instanceof Error ? error.message : "Unknown error",
+      error: "We couldn't reach Prisma Docs right now. Please try again or open the guide directly.",
     });
   }
 }
