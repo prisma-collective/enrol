@@ -1,140 +1,100 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useRouter } from "next/navigation";
-import { IoChevronBack, IoChevronForward } from "react-icons/io5";
-import SectionHeading from "@/components/SectionHeading";
+import Link from "next/link";
+import { FiArrowRight, FiShield, FiUserPlus } from "react-icons/fi";
+import { HelpTip } from "@/components/HelpTip";
 
-const SLIDE_COUNT = 2;
-
-const slides = [
+const PATHS = [
   {
     id: "first-arrivals",
-    mobileTab: "First arrivals",
+    step: "01",
     eyebrow: "Registration",
     title: "First arrivals",
-    placeholder:
-      "Please continue event enrolment by clicking here to select your role. The following pages contain forms to collect basic info.",
-    secondary: "Choose your role and complete event enrolment",
+    summary: "New to Prisma Events? Pick your stakeholder role and complete the short enrolment form.",
+    helpTitle: "Who should choose First arrivals?",
+    helpText: "Select this if you are registering as an individual participant, bioregional hub, network representative, or partner for the first time.",
+    cta: "Select your role",
     href: "/event",
+    accent: "text-[var(--color-flow)]",
+    icon: <FiUserPlus className="text-lg" />,
   },
   {
     id: "returning",
-    mobileTab: "Returning",
-    eyebrow: "Identity",
+    step: "02",
+    eyebrow: "Identity & DID",
     title: "Returning participant",
-    placeholder:
-      "Experienced participants may deepen their profile by connecting their wallet and registering a decentralised ID, used to sign verifiable claims.",
-    secondary: "Create and verify your Cardano DID",
+    summary: "Connect your Cardano wallet to register or verify your Decentralised ID (DID) for signing claims.",
+    helpTitle: "What is a Cardano DID?",
+    helpText: "A Decentralised ID links your Cardano wallet to verifiable claims and lets hubs recognize you cleanly across Prisma apps.",
+    cta: "Verify or create DID",
     href: "/identity/guide",
+    accent: "text-[var(--color-hub-soft)]",
+    icon: <FiShield className="text-lg" />,
   },
 ] as const;
 
 export default function Home() {
-  const router = useRouter();
-  const [activePage, setActivePage] = useState(0);
-
-  const goToPage = useCallback((next: number) => {
-    setActivePage(Math.max(0, Math.min(next, SLIDE_COUNT - 1)));
-  }, []);
-
   return (
-    <section className="relative h-[100svh] overflow-hidden">
-      {activePage > 0 ? (
-        <button
-          type="button"
-          aria-label="Previous option"
-          onClick={() => goToPage(activePage - 1)}
-          className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 p-2 text-mute transition-colors duration-300 cursor-pointer hover:text-white md:block md:left-8"
-        >
-          <IoChevronBack size={20} aria-hidden />
-        </button>
-      ) : null}
-      {activePage < SLIDE_COUNT - 1 ? (
-        <button
-          type="button"
-          aria-label="Next option"
-          onClick={() => goToPage(activePage + 1)}
-          className="absolute right-4 top-1/2 z-20 hidden -translate-y-1/2 p-2 text-mute/35 transition-colors duration-300 cursor-pointer hover:text-mute md:block md:right-8"
-        >
-          <IoChevronForward size={20} aria-hidden />
-        </button>
-      ) : null}
-
-      <div
-        className="absolute top-20 left-0 right-0 z-20 px-6 md:hidden"
-        role="tablist"
-        aria-label="Registration path"
-      >
-        <div className="mx-auto flex w-full max-w-[1200px] items-center justify-start">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activePage === 0}
-            tabIndex={activePage === 0 ? 0 : -1}
-            onClick={() => goToPage(0)}
-            className={
-              activePage === 0
-                ? "px-0 py-1 text-sm text-signal transition-colors duration-300 cursor-pointer"
-                : "px-0 py-1 text-sm text-mute/25 transition-colors duration-300 cursor-pointer hover:text-mute/50"
-            }
-          >
-            {slides[0].mobileTab}
-          </button>
-          <span className="mx-3 h-3.5 w-px shrink-0 bg-rule" aria-hidden />
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activePage === 1}
-            tabIndex={activePage === 1 ? 0 : -1}
-            onClick={() => goToPage(1)}
-            className={
-              activePage === 1
-                ? "px-0 py-1 text-sm text-signal transition-colors duration-300 cursor-pointer"
-                : "px-0 py-1 text-sm text-mute/25 transition-colors duration-300 cursor-pointer hover:text-mute/50"
-            }
-          >
-            {slides[1].mobileTab}
-          </button>
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col">
+      {/* Sticky solid-opaque page hero */}
+      <section className="hero-grad-sticky px-5 sm:px-8 py-5 border-b border-[var(--color-rule)]">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-xs sm:text-sm font-medium text-[var(--color-hub-soft)] tracking-[0.2em] uppercase">
+            Prisma Enrol
+          </div>
+          <h1 className="display text-4xl sm:text-5xl leading-none uppercase text-white mt-2">
+            Choose your path
+          </h1>
+          <p className="text-base sm:text-lg text-[var(--color-mute)] mt-2.5 max-w-2xl leading-relaxed">
+            Register for a Prisma event cohort or verify your returning participant identity.
+          </p>
         </div>
-      </div>
+      </section>
 
-      <div
-        className="flex h-full transition-transform duration-500 ease-prisma motion-reduce:transition-none"
-        style={{ transform: `translateX(-${activePage * 100}%)` }}
-      >
-        {slides.map((slide, index) => (
+      {/* Main side-by-side entry cards */}
+      <main className="relative z-10 flex-1 px-5 sm:px-8 py-8 sm:py-10 max-w-5xl w-full mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+          {PATHS.map((path, idx) => (
             <div
-              key={slide.id}
-              className="flex h-full w-full shrink-0 items-center justify-center px-6 pt-32 pb-8 md:px-8 md:pt-16"
-              aria-hidden={activePage !== index}
+              key={path.id}
+              className="card p-6 sm:p-7 flex flex-col justify-between gap-6 hover:border-[var(--color-rule-strong)] transition-colors"
             >
-              <button
-                type="button"
-                onClick={() => router.push(slide.href)}
-                className="flex w-full max-w-[min(960px,92vw)] h-auto max-h-[min(720px,82svh)] md:h-full flex-col justify-between border border-rule bg-black/20 px-10 py-12 text-left transition-colors duration-300 cursor-pointer hover:border-mute/40 md:px-14 md:py-16"
-              >
-                <div>
-                  <p className="mb-6 text-sm uppercase tracking-[0.2em] text-mute">
-                    {slide.eyebrow}
-                  </p>
-                  <SectionHeading
-                    as="h1"
-                    className="mb-6 text-3xl sm:text-4xl"
+              <div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`inline-flex items-center gap-2 text-sm font-medium ${path.accent}`}>
+                    {path.icon}
+                    <span className="uppercase tracking-[0.16em] text-xs">{path.step} · {path.eyebrow}</span>
+                  </span>
+                  <HelpTip
+                    label={`About ${path.title}`}
+                    title={path.helpTitle}
+                    align={idx === 1 ? "right" : "left"}
                   >
-                    {slide.title}
-                  </SectionHeading>
-                  <p className="mb-8 max-w-[540px] text-base leading-relaxed text-mute sm:text-lg">
-                    {slide.placeholder}
-                  </p>
+                    {path.helpText}
+                  </HelpTip>
                 </div>
-                <p className="text-sm leading-relaxed text-mute">
-                  {slide.secondary}
+
+                <h2 className="display text-3xl sm:text-4xl leading-none uppercase text-white mt-5">
+                  {path.title}
+                </h2>
+                <p className="text-base text-[var(--color-mute)] mt-3 leading-relaxed">
+                  {path.summary}
                 </p>
-              </button>
+              </div>
+
+              <div className="pt-2">
+                <Link
+                  href={path.href}
+                  className={idx === 0 ? "btn btn-primary w-full sm:w-auto" : "btn w-full sm:w-auto"}
+                >
+                  <span>{path.cta}</span>
+                  <FiArrowRight />
+                </Link>
+              </div>
             </div>
           ))}
-      </div>
-    </section>
+        </div>
+      </main>
+    </div>
   );
 }

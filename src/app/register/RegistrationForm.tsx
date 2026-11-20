@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect } from 'react';
-import Script from 'next/script';
+import { useEffect } from "react";
+import Script from "next/script";
 
 declare global {
   interface Window {
@@ -23,7 +23,7 @@ export default function RegistrationForm({ formID }: RegistrationFormProps) {
   });
 
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-white">
+    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col bg-white">
       <Script
         src="https://tally.so/widgets/embed.js"
         strategy="lazyOnload"
@@ -35,10 +35,10 @@ export default function RegistrationForm({ formID }: RegistrationFormProps) {
       />
       <iframe
         data-tally-src={`https://tally.so/r/${formID}`}
+        title="Prisma Event Registration Form"
         width="100%"
-        height="100%"
-        style={{ border: 'none', minHeight: '100vh' }}
-      ></iframe>
+        className="flex-1 w-full min-h-[calc(100vh-4rem)] border-0"
+      />
     </div>
   );
 }
