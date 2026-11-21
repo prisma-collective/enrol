@@ -109,3 +109,8 @@ pnpm build
 ## Deploy on Vercel
 
 Deployed to **register.prisma.events**. Set `PRIVATE_API_TOKEN`, `NEXT_PUBLIC_DID_INDEXER_URL`, and docs env vars in Vercel.
+
+
+## Prisma architecture alignment
+
+See [Prisma identity and manifest alignment](./docs/prisma-identity-and-manifest-alignment.md) for the D18/D23/D24/D28 integration contract, existing AppView identity-link reuse, and the build-pinned Enrol manifest approach.
