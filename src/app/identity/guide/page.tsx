@@ -40,7 +40,7 @@ export default function IdentityGuidePage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="text-xs sm:text-sm font-medium text-[var(--color-hub-soft)] tracking-[0.2em] uppercase">
-              Step 01 · Identity &amp; DID
+              Step 02 · Identity &amp; DID
             </div>
             <h1 className="display text-4xl sm:text-5xl leading-none uppercase text-white mt-2">
               Register your identity

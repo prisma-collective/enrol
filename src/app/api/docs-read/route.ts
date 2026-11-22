@@ -52,6 +52,9 @@ export async function GET(request: Request) {
     });
 
     if (!response.ok) {
+      console.error(
+        `[docs-read] Upstream request failed: ${response.status} ${response.statusText} (path=${path}, tokenConfigured=${Boolean(token)})`
+      );
       if (response.status === 401 || response.status === 403) {
         return NextResponse.json({
           content: "",
