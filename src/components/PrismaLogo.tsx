@@ -1,28 +1,26 @@
-import Image from "next/image";
 import Link from "next/link";
 
 export default function PrismaLogo() {
   return (
     <Link
       href="/"
-      className="flex items-center gap-2"
-      aria-label="Prisma Events home"
+      className="inline-flex items-center gap-2 shrink-0 transition-opacity hover:opacity-90"
+      aria-label="Prisma Enrol home"
     >
-      <Image
+      <img
         src="/Prisma_Logo_White.svg"
-        width={28}
-        height={28}
         alt=""
-        className="shrink-0"
         aria-hidden
+        className="h-6 w-6 shrink-0"
       />
-      <Image
+      <img
         src="/prisma-name-text.svg"
-        width={140}
-        height={60}
         alt="Prisma"
-        className="h-8 w-auto max-w-none shrink-0"
+        className="h-[24px] w-auto shrink-0 translate-y-[2px]"
       />
+      <span className="text-[0.68rem] font-medium uppercase tracking-[0.16em] text-[var(--color-mute)] pl-0.5">
+        Enrol
+      </span>
     </Link>
   );
 }

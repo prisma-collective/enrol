@@ -1,23 +1,21 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Bebas_Neue, Space_Grotesk } from 'next/font/google';
 import SiteHeaderNav from "@/components/SiteHeaderNav";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const bebasNeue = Bebas_Neue({
-  weight: '400',
-  subsets: ['latin'],
-  variable: '--font-bebas-neue',
-});
-
 export const metadata: Metadata = {
-  title: "Prisma Events Registration",
-  description: "Register for Prisma Events",
+  title: "Enrol · Prisma",
+  description: "Register for Prisma Events and verify your regional identity.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/Prisma_Logo_White.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     title: "Prisma Events Registration",
@@ -47,16 +45,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
-        <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="manifest" href="/manifest.json" />
-      </head>
-      <body className={`${spaceGrotesk.className} ${bebasNeue.variable}`}>
-        {/* useSearchParams (?return=) needs a Suspense boundary, or the static build fails */}
-        <Suspense fallback={null}>
+      <body className="antialiased selection:bg-[rgba(123,97,255,0.3)] selection:text-white">
+        {/* useSearchParams (?return=) needs a Suspense boundary */}
+        <Suspense fallback={<div className="h-16 border-b border-[var(--color-rule)] bg-[var(--color-void)]" />}>
           <SiteHeaderNav />
         </Suspense>
         {children}

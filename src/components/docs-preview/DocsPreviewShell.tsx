@@ -38,6 +38,7 @@ export default function DocsPreviewShell({
   const [docs, setDocs] = useState<DocsReadResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!open) return;
@@ -84,10 +85,10 @@ export default function DocsPreviewShell({
         const data = (await response.json()) as DocsReadResponse;
         if (cancelled) return;
         setDocs(data);
-        if (!data.success) setError(data.error || "Failed to load content");
-      } catch (err) {
+        if (!data.success) setError(data.error || "We couldn't load this guide right now.");
+      } catch {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Unknown error occurred");
+        setError("We couldn't reach Prisma Docs right now. Please try again or open the guide directly.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -97,7 +98,7 @@ export default function DocsPreviewShell({
     return () => {
       cancelled = true;
     };
-  }, [source]);
+  }, [source, retryCount]);
 
   const rawMarkdown = docs?.content ?? "";
 
@@ -196,9 +197,29 @@ export default function DocsPreviewShell({
             </div>
           )}
 
-          {!isEmbed && !loading && error && (
-            <div className="mb-6 rounded-md border border-red-500/40 bg-red-900/20 p-3 text-sm text-red-200">
-              {error}
+          {!isEmbed && !loading && error && source && !isEmbedPreviewSource(source) && (
+            <div className="mb-6 rounded-xl border border-[var(--color-rule-strong)] bg-[var(--color-panel)] p-5 space-y-4">
+              <div className="space-y-1.5">
+                <div className="text-sm font-medium text-white">Guide preview unavailable</div>
+                <p className="text-sm text-[var(--color-mute)] leading-relaxed">{error}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <a
+                  href={`${DOCS_ORIGIN}/${docsReadPath(source.docsPath)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary btn-sm"
+                >
+                  Open guide on Prisma Docs ↗
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setRetryCount((n) => n + 1)}
+                  className="btn btn-sm"
+                >
+                  Try again
+                </button>
+              </div>
             </div>
           )}
 

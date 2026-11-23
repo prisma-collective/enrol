@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { FiArrowRight, FiArrowUpRight, FiCheck, FiCopy, FiRefreshCw } from "react-icons/fi";
 import IdentityFeedbackBanner from "@/components/identity/IdentityFeedbackBanner";
+import { HelpTip } from "@/components/HelpTip";
 import { enableWallet, scanWallets, type WalletInfo } from "@/lib/cardano/wallet";
 import { rewardAddressHexToBech32 } from "@/lib/cardano/stakeAddress";
 import { checkDIDForStakeAddress, type DIDCheckResult } from "@/lib/did/client";
@@ -11,21 +13,20 @@ type LookupPhase = "idle" | "checking" | "result" | "error";
 
 export default function IdentityLookupPage() {
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
-  const [walletError, setWalletError] = useState<string | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const [showNoWallet, setShowNoWallet] = useState(false);
   const [connectedWalletKey, setConnectedWalletKey] = useState<string | null>(null);
   const [stakeAddress, setStakeAddress] = useState<string | null>(null);
   const [phase, setPhase] = useState<LookupPhase>("idle");
   const [result, setResult] = useState<DIDCheckResult | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const refreshWallets = useCallback(() => {
     const detected = scanWallets();
     setWallets(detected);
-    if (detected.length === 0) {
-      setWalletError("No Cardano wallet was detected in this browser.");
-    } else {
-      setWalletError(null);
-    }
+    if (detected.length > 0) setShowNoWallet(false);
+    return detected;
   }, []);
 
   useEffect(() => {
@@ -38,6 +39,7 @@ export default function IdentityLookupPage() {
     setPhase("checking");
     setLookupError(null);
     setResult(null);
+    setShowPicker(false);
 
     try {
       const api = await enableWallet(walletKey);
@@ -59,10 +61,35 @@ export default function IdentityLookupPage() {
     }
   }, []);
 
+  const handleConnectClick = () => {
+    const detected = refreshWallets();
+    if (detected.length === 1) {
+      void runLookup(detected[0].key);
+      return;
+    }
+    if (detected.length > 1) {
+      setShowNoWallet(false);
+      setShowPicker((p) => !p);
+      return;
+    }
+    setShowPicker(false);
+    setShowNoWallet(true);
+  };
+
   const handleRefresh = useCallback(async () => {
     if (!connectedWalletKey) return;
     await runLookup(connectedWalletKey);
   }, [connectedWalletKey, runLookup]);
+
+  const copyDid = async (did: string) => {
+    try {
+      await navigator.clipboard.writeText(did);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch {
+      // ignore clipboard errors
+    }
+  };
 
   const statusMessage = (() => {
     if (!result) return null;
@@ -91,105 +118,177 @@ export default function IdentityLookupPage() {
   })();
 
   return (
-    <div className="flex min-h-[100svh] flex-col bg-black text-white">
-      <IdentityFeedbackBanner />
-
-      <div className="flex flex-1 items-center justify-center px-6 py-10 pt-28 sm:pt-24">
-      <div className="w-full max-w-md">
-        <h1 className="text-2xl font-semibold mb-2">Check your DID</h1>
-        <p className="text-gray-400 text-sm mb-8">
-          Connect the same wallet you used on the DIDs dashboard, then refresh to check status.
-        </p>
-
-        {walletError && phase === "idle" && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-amber-800 bg-amber-950/30 p-3 text-sm text-amber-200"
-          >
-            {walletError}
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col">
+      {/* Sticky solid-opaque page hero */}
+      <section className="hero-grad-sticky px-5 sm:px-8 py-5 border-b border-[var(--color-rule)]">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="text-xs sm:text-sm font-medium text-[var(--color-hub-soft)] tracking-[0.2em] uppercase">
+              Step 02 · Identity verification
+            </div>
+            <h1 className="display text-4xl sm:text-5xl leading-none uppercase text-white mt-2">
+              Check your DID
+            </h1>
+            <p className="text-base sm:text-lg text-[var(--color-mute)] mt-2.5 max-w-2xl leading-relaxed">
+              Connect the wallet you used on the DIDs dashboard to confirm your on-chain status.
+            </p>
           </div>
-        )}
-
-        {lookupError && (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-red-800 bg-red-950/40 p-3 text-sm text-red-200"
-          >
-            {lookupError}
+          <div className="shrink-0 self-start sm:self-center">
+            <IdentityFeedbackBanner />
           </div>
-        )}
+        </div>
+      </section>
 
-        {statusMessage && (
-          <div
-            role="status"
-            className={`mb-4 rounded-lg border p-3 text-sm ${
-              statusMessage.tone === "success"
-                ? "border-green-800 bg-green-950/30 text-green-200"
-                : statusMessage.tone === "warning"
-                  ? "border-amber-800 bg-amber-950/30 text-amber-200"
-                  : "border-red-800 bg-red-950/40 text-red-200"
-            }`}
-          >
-            {statusMessage.text}
-            {result?.did && (
-              <p className="mt-2 break-all font-mono text-xs opacity-90">{result.did}</p>
-            )}
+      <main className="relative z-10 flex-1 flex items-start sm:items-center justify-center px-5 py-10">
+        <div className="card w-full max-w-md p-6 sm:p-7 space-y-5">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-medium tracking-tight text-white">
+                  Wallet verification
+                </h2>
+                <HelpTip label="About wallet verification" title="Read-only stake check" align="right">
+                  Connecting only reads your Cardano stake address to check whether an active DID exists on-chain. Nothing is spent or transferred.
+                </HelpTip>
+              </div>
+              <p className="text-sm text-[var(--color-mute)] mt-1">
+                {phase === "checking"
+                  ? "Checking on-chain DID status…"
+                  : "Connect your wallet to look up your DID."}
+              </p>
+            </div>
           </div>
-        )}
 
-        {phase !== "checking" && (
-          <div className="grid gap-2 mb-4">
-            {wallets.map((wallet) => (
+          {lookupError && (
+            <div
+              role="alert"
+              className="rounded-xl border border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] p-3.5 text-sm text-[#fecaca]"
+            >
+              {lookupError}
+            </div>
+          )}
+
+          {statusMessage && (
+            <div
+              role="status"
+              className={`rounded-xl border p-4 text-sm space-y-2.5 ${
+                statusMessage.tone === "success"
+                  ? "border-[rgba(52,211,153,0.3)] bg-[rgba(52,211,153,0.08)] text-[#d1fae5]"
+                  : statusMessage.tone === "warning"
+                    ? "border-[rgba(245,158,11,0.3)] bg-[rgba(245,158,11,0.09)] text-[#fde68a]"
+                    : "border-[rgba(248,113,113,0.3)] bg-[rgba(248,113,113,0.08)] text-[#fecaca]"
+              }`}
+            >
+              <p>{statusMessage.text}</p>
+              {result?.did && (
+                <div className="rounded-lg bg-[var(--color-void)] border border-[var(--color-rule)] p-2.5 flex items-center justify-between gap-2">
+                  <code className="font-mono text-xs text-[var(--color-flow)] break-all">
+                    {result.did}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={() => copyDid(result.did!)}
+                    className="btn btn-ghost btn-sm shrink-0"
+                  >
+                    {copied ? <FiCheck className="text-[var(--color-ok)]" /> : <FiCopy />}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {phase !== "checking" && (
+            <div className="space-y-3">
               <button
-                key={wallet.key}
                 type="button"
-                onClick={() => runLookup(wallet.key)}
-                className="flex items-center justify-center gap-2 bg-gray-900 text-white border border-gray-700 px-4 py-3 rounded-lg hover:border-gray-500 transition-colors cursor-pointer"
+                onClick={handleConnectClick}
+                className="btn btn-primary w-full py-2.5"
               >
-                {wallet.icon && (
-                  <img src={wallet.icon} alt="" className="w-5 h-5 rounded" />
-                )}
-                Connect {wallet.name}
+                {wallets.length === 1 ? `Connect ${wallets[0].name}` : "Connect wallet"}
               </button>
-            ))}
-          </div>
-        )}
 
-        {phase === "checking" && (
-          <p className="text-gray-400 text-sm text-center mb-4">Checking DID status…</p>
-        )}
+              {showPicker && wallets.length > 1 && (
+                <div className="rounded-xl bg-[var(--color-void)] border border-[var(--color-rule)] p-2.5 space-y-1.5">
+                  <div className="text-xs text-[var(--color-mute)] px-1.5 pb-0.5">
+                    Choose a wallet
+                  </div>
+                  {wallets.map((wallet) => (
+                    <button
+                      key={wallet.key}
+                      type="button"
+                      onClick={() => runLookup(wallet.key)}
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-[var(--color-text)] bg-[var(--color-panel-2)] hover:bg-[var(--color-elevated)] border border-[var(--color-rule)] transition-colors cursor-pointer"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        {wallet.icon && (
+                          <img src={wallet.icon} alt="" className="w-4 h-4 rounded" />
+                        )}
+                        {wallet.name}
+                      </span>
+                      <FiArrowRight className="text-[var(--color-mute)]" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-        {wallets.length === 0 && (
-          <button
-            type="button"
-            onClick={refreshWallets}
-            className="w-full mb-4 bg-gray-900 text-white border border-gray-700 px-4 py-3 rounded-lg hover:border-gray-500 transition-colors cursor-pointer"
-          >
-            Check for wallet
-          </button>
-        )}
+              {showNoWallet && wallets.length === 0 && (
+                <div className="rounded-xl bg-[rgba(255,255,255,0.03)] border border-[var(--color-rule-strong)] p-4 text-sm space-y-2.5">
+                  <div className="text-[var(--color-text)] font-medium">
+                    No Cardano wallet found in this browser
+                  </div>
+                  <p className="text-[var(--color-mute)] leading-relaxed">
+                    Install Eternl or Lace, or open this page inside your wallet&apos;s browser.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <a
+                      href="https://eternl.io"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-sm"
+                    >
+                      Get Eternl <FiArrowUpRight />
+                    </a>
+                    <a
+                      href="https://www.lace.io"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-sm"
+                    >
+                      Get Lace <FiArrowUpRight />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleConnectClick}
+                      className="btn btn-ghost btn-sm"
+                    >
+                      <FiRefreshCw className="text-xs" /> Check again
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-        {connectedWalletKey && stakeAddress && (
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={phase === "checking"}
-            className="w-full bg-gray-800 text-white border border-gray-600 px-4 py-3 rounded-lg hover:border-gray-400 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {phase === "checking" ? "Refreshing…" : "Refresh status"}
-          </button>
-        )}
+          {connectedWalletKey && stakeAddress && (
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={phase === "checking"}
+              className="btn w-full"
+            >
+              <FiRefreshCw className={phase === "checking" ? "animate-spin" : ""} />
+              {phase === "checking" ? "Refreshing…" : "Refresh status"}
+            </button>
+          )}
 
-        {result?.status === "active" && (
-          <Link
-            href="/event"
-            className="block mt-4 text-center text-sm text-gray-400 hover:text-white transition-colors"
-          >
-            Register for an event &rarr;
-          </Link>
-        )}
-      </div>
-      </div>
+          {result?.status === "active" && (
+            <Link href="/event" className="btn btn-primary w-full">
+              <span>Continue to event enrolment</span>
+              <FiArrowRight />
+            </Link>
+          )}
+        </div>
+      </main>
     </div>
   );
 }
