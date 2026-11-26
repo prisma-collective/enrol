@@ -62,40 +62,54 @@ route is gone.
 | `NEXT_PUBLIC_DID_APP_URL` | DIDs dashboard URL (identity guide CTA) |
 | `NEXT_PUBLIC_DOCS_API_ORIGIN` | Docs serve API origin (default `https://docs.prisma.events`) |
 | `DOCS_API_TOKEN` | Optional bearer token for docs serve API (server-only) |
-| `ATPDS_URL` | Prisma PDS (at-pds) where enrol has its own repo |
-| `ENROL_SIGNING_KEY` | enrol's Ed25519 key, 32 bytes of hex (secret, server-only). It signs in to the PDS like a wallet |
-| `ENROL_NETWORK` | `mainnet` or `testnet` (default) for enrol's stake address |
-| `ENROL_REPO_DID` | enrol's repo DID, from `POST /api/atproto/init` |
-| `ENROL_HUB_FORM_IDS` | Comma-separated Tally form ids of the hub enrolment form |
-| `ENROL_WALLET_FIELD` | Label of the form question with the wallet's stake address (or `did:cardano:...`) |
-| `ENROL_CONSENT_FIELD` | Label of the checkbox that agrees to publish the wallet |
+| `ATPDS_URL` | Prisma PDS (at-pds) where Enrol has its own repo |
+| `ENROL_SIGNING_KEY` | Enrol's Ed25519 key, 32 bytes of hex (secret, server-only). It signs in to the PDS like a wallet |
+| `ENROL_NETWORK` | `mainnet` or `testnet` (default) for Enrol's stake address |
+| `ENROL_REPO_DID` | Enrol's repo DID, from `POST /api/atproto/init` |
+| `ENROL_HUB_FORM_IDS` | Comma-separated Tally form IDs of the hub enrolment form |
+| `ENROL_WALLET_FIELD` | Tally question ID (or legacy label) containing the wallet stake address or `did:cardano:…` |
+| `ENROL_CONSENT_FIELD` | Tally question ID (or legacy label) consenting to publish the wallet association |
+| `ENROL_NAME_FIELD` | Tally question ID (or legacy label) for the public hub name |
+| `ENROL_NAME_CONSENT_FIELD` | Separate Tally question ID (or legacy label) consenting to publish the hub name |
+| `ENROL_COUNTRY_FIELD` | Tally question ID (or legacy label) for the public country |
+| `ENROL_COUNTRY_CONSENT_FIELD` | Separate Tally question ID (or legacy label) consenting to publish the country |
 
-## Hub registrations on AT Protocol (D25)
+## Hub registrations on AT Protocol (D24/D25)
 
-When a hub sends the enrolment form, `/api/webhook/form/hubs/curation` keeps it in Redis as
-before and also publishes one record from enrol's own repo:
+A verified Tally hub enrolment can publish two independent records from Enrol's
+own repository. Enrol authenticates its PDS writes with its own repository
+identity; the Cardano wallet DID remains the person/organisation identity and
+is not used as the PDS repository DID.
 
-```json
-{ "$type": "events.prisma.enrol.registration",
-  "registrationId": "<Tally responseId>", "cardanoDid": "did:cardano:stake...",
-  "role": "hub", "createdAt": "..." }
-```
+1. `events.prisma.enrol.registration` at rkey = the Tally response ID contains
+   only `registrationId`, `cardanoDid`, `role` and `createdAt`. This is
+   the enrolment-to-wallet association consumed by AppView's trusted-Enrol
+   join. It is published only when the wallet-specific consent is affirmative.
+2. `events.prisma.hub.profile` at rkey `self` contains the public hub name
+   and country. Each field requires its own separate affirmative consent.
+   Missing consent configuration or an unticked consent prevents this write.
 
-at rkey = the responseId. Nothing else from the form is published, and only
-when the consent box is ticked. The Prisma AppView joins it with the hub's
-identity link (did:cardano → repo), so potentialise can show each hub's live
-state. If publishing fails, the submission is still saved and the error is
-logged.
+No other Tally answers are copied into these records. The original form
+submission continues through the existing Redis queue. A PDS publishing
+failure does not undo the already accepted webhook submission.
 
-Off until every variable above is set. To turn it on:
+The Tally mapping is Enrol-owned in `src/lib/atproto/manifest.ts`, versioned,
+and pinned in the application build. The manifest pins the at-tap contract
+revision; each deployment supplies its actual Tally form and question IDs
+through environment variables. Enrol does not fetch mutable Lexicons or
+mapping files from GitHub while processing a webhook.
 
-1. Generate a key: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
-   and set `ENROL_SIGNING_KEY` and `ATPDS_URL`.
-2. Create enrol's repo, once:
-   `curl -X POST -H "Authorization: Bearer $PRIVATE_API_TOKEN" https://register.prisma.events/api/atproto/init`
-   It returns `{ cardanoDid, repoDid }`.
-3. Set `ENROL_REPO_DID` to `repoDid`, and the three form variables.
-4. Give `repoDid` to the AppView (`ENROL_DIDS`), and have Tap follow it.
+### Setup
+
+1. Generate an Enrol PDS signing key and set `ENROL_SIGNING_KEY` and `ATPDS_URL`.
+2. Create Enrol's repo once using the existing `/api/atproto/init` flow.
+3. Set `ENROL_REPO_DID`, `ENROL_HUB_FORM_IDS`, `ENROL_WALLET_FIELD` and `ENROL_CONSENT_FIELD`.
+4. To publish the public profile, additionally set the name, country and their two separate consent mappings.
+5. Give Enrol's repo DID to the AppView trusted list (`ENROL_DIDS`), and have Tap follow it.
+
+The PDS publisher is off until the identity and registration variables are
+configured. Public profile publishing is independently skipped unless every
+field and consent mapping is configured.
 
 ## Development
 
